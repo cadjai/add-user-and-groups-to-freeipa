@@ -1,0 +1,24 @@
+---
+# tasks file for manage-ipa-users-and-groups
+- name: Print ipa_groups List
+  debug:
+    var: ipa_groups 
+
+- name: Ensure groups are in the appropriate state 
+  ipa_group:
+    name: "{{ item }}"
+    description: "{{ item }}"
+    external: no 
+    group: "{{ ipa_root_domain }}\\{{ item }}"
+    ipa_host: "{{ ipa_host }}"
+    ipa_port: "{{ ipa_port | default(443) }}"
+    ipa_user: "{{ ipa_admin_username }}"
+    ipa_pass: "{{ ipa_admin_password }}"
+    validate_certs: false
+    state: 'present'
+  with_items: "{{ ipa_groups }}"
+  register: groups_added
+  failed_when:
+    - groups_added is defined
+    - groups_added.msg is defined
+    - "not 'response group_mod: no modifications to be performed' in groups_added.msg"

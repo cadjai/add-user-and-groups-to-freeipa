@@ -1,0 +1,27 @@
+---
+# tasks file for manage-ipa-users-and-groups
+- name: Create list of groups to be created
+  set_fact:
+    ipa_groups: "{{ lookup('flattened', (users | map(attribute='groups') | list)).split(',') | unique }}"
+    ipa_users: "{{ users }}"
+
+- name: Set Fact
+  set_fact:
+    ipa_group_users: 
+     name: "{{ item }}" 
+     users: "{{ users | selectattr('groups', 'contains', item) | map(attribute='name') | list }}"
+  loop: "{{ipa_groups }}"
+  register: ipa_group_users_set
+
+- name: Set Fact
+  set_fact:
+    ipa_groups_users: "{{ ipa_group_users_set.results  | map(attribute='ansible_facts.ipa_group_users') | list }}" 
+
+- name: Include new groups addition tasks 
+  include_tasks: add-groups.yml
+
+- name: Include new users addition tasks
+  include_tasks: add-users.yml
+
+- name: Include tasks to add users to groups
+  include_tasks: add-users-to-groups.yml

@@ -1,0 +1,34 @@
+---
+# tasks file for manage-ipa-users-and-groups
+- name: Print List of Users
+  debug:
+    var: ipa_users
+
+### Only use uidnumber if you going to use gidnumber. ###
+- name: Create Users or Ensure they already exist 
+  ipa_user:
+    name: "{{ item.name }}"
+    uid: "{{ item.name }}"
+    displayname: "{{ item.name[0] | upper }}{{ item.name[1:] }}" 
+    givenname: "{{ item.firstname }}"
+    sn: "{{ item.lastname | default(omit) }}"
+    mail: 
+    - "{{ item.email | default(omit) }}"
+    sshpubkey: 
+    - "{{ item.pubkey | default('None') }}"
+    #uidnumber: "{{ item.uid | default(omit) }}"
+    #gidnumber: "{{ item.gid | default(null) }}"
+    ipa_host: "{{ ipa_host }}"
+    ipa_port: "{{ ipa_port | default(443) }}"
+    ipa_user: "{{ ipa_admin_username }}"
+    ipa_pass: "{{ ipa_admin_password }}"
+    update_password: on_create
+    krbpasswordexpiration: "{{ '%Y%m%d%H%M%S' | strftime((ansible_date_time.epoch | int) + (86400 * (item.expiration_days | default(365 * 2, false)))) }}"
+    validate_certs: false
+    state: "{{ item.state | default('present') }}"
+  with_items: "{{ ipa_users }}"
+  register: users_added
+  failed_when:
+    - users_added is defined
+    - users_added.msg is defined
+    - "not 'response group_mod: no modifications to be performed' in users_added.msg"

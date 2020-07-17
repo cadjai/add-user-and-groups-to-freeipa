@@ -1,0 +1,17 @@
+---
+# tasks file for manage-ipa-users-and-groups
+
+- name: Ensure users are added to groups
+  ipa_group:
+    name: "{{ item.name }}"
+    user: "{{ item.users }}"
+    group: "{{ ipa_root_domain }}\\{{ item.name }}"
+    ipa_host: "{{ ipa_host }}"
+    ipa_port: "{{ ipa_port | default(443) }}"
+    ipa_user: "{{ ipa_admin_username }}"
+    ipa_pass: "{{ ipa_admin_password }}"
+    validate_certs: false
+    state: "{{ item.state | default('present') }}"
+  with_items: 
+    - "{{ ipa_groups_users }}"
+
